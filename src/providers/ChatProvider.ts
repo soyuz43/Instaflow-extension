@@ -1,9 +1,12 @@
 import * as vscode from 'vscode';
 import { APIClient } from '../util/apiClient';
+import * as crypto from 'crypto';
 
 export class ChatProvider implements vscode.WebviewViewProvider {
     private _view?: vscode.WebviewView;
-    
+    private _disposables: vscode.Disposable[] = [];
+    public isViewVisible: boolean = false; // Initialize the property
+
     constructor(
         private readonly _extensionUri: vscode.Uri,
         private readonly apiClient: APIClient
@@ -12,47 +15,66 @@ export class ChatProvider implements vscode.WebviewViewProvider {
     resolveWebviewView(webviewView: vscode.WebviewView) {
         this._view = webviewView;
 
+        // Configure webview options
         webviewView.webview.options = {
             enableScripts: true,
             localResourceRoots: [this._extensionUri]
         };
 
-        webviewView.webview.html = this.getHtml(webviewView.webview);
+        // Generate security nonce
+        const nonce = crypto.randomBytes(16).toString('hex');
 
-        webviewView.webview.onDidReceiveMessage(async (message) => {
-            switch (message.type) {
-                case 'quickAssist':
-                    try {
-                        const response = await this.apiClient.quickAssist(message.text);
-                        this._view?.webview.postMessage({
-                            type: 'response',
-                            text: response
-                        });
-                    } catch (error) {
-                        vscode.window.showErrorMessage('Failed to get response: ' + error);
-                    }
-                    break;
+        // Set HTML content with proper CSP
+        webviewView.webview.html = this.getHtml(webviewView.webview, nonce);
 
-                case 'clearHistory':
-                    this.clearChatHistory();
-                    break;
-
-                case 'openSettings':
-                    vscode.commands.executeCommand('instaflow.selectModel');
-                    break;
-
-                case 'openDrafts':
-                    vscode.window.showInformationMessage('Drafts feature coming soon!');
-                    break;
+        // Handle view visibility changes
+        webviewView.onDidChangeVisibility(() => {
+            this.isViewVisible = webviewView.visible; // Update the property
+            if (this.isViewVisible) {
+                this.refreshWebview(nonce);
             }
         });
+
+        // Setup message handling
+        this.setupMessageHandlers(webviewView.webview);
+
+        // Cleanup on dispose
+        webviewView.onDidDispose(() => this.dispose());
     }
 
-    private getHtml(webview: vscode.Webview): string {
-        const styleUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this._extensionUri, 'media', 'styles.css')
-        );
+    private setupMessageHandlers(webview: vscode.Webview) {
+        this._disposables.push(
+            webview.onDidReceiveMessage(async (message) => {
+                switch (message.type) {
+                    case 'quickAssist':
+                        try {
+                            const response = await this.apiClient.quickAssist(message.text);
+                            this.postMessage({
+                                type: 'response',
+                                text: response
+                            });
+                        } catch (error) {
+                            vscode.window.showErrorMessage(`Failed to get response: ${error}`);
+                        }
+                        break;
 
+                    case 'clearHistory':
+                        this.clearChatHistory();
+                        break;
+
+                    case 'openSettings':
+                        vscode.commands.executeCommand('instaflow.selectModel');
+                        break;
+
+                    case 'openDrafts':
+                        vscode.window.showInformationMessage('Drafts feature coming soon!');
+                        break;
+                }
+            })
+        );
+    }
+
+    private getHtml(webview: vscode.Webview, nonce: string): string {
         // SVG Icons
         const settingsIcon = `
             <svg viewBox="0 0 24 24" width="16" height="16">
@@ -77,8 +99,12 @@ export class ChatProvider implements vscode.WebviewViewProvider {
             <html>
             <head>
                 <meta charset="UTF-8">
+                <meta http-equiv="Content-Security-Policy" 
+                      content="default-src 'none; 
+                              script-src 'nonce-${nonce}';
+                              img-src ${webview.cspSource} 'self' data:;
+                              style-src 'unsafe-inline'">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <link rel="stylesheet" href="${styleUri}">
             </head>
             <body>
                 <div id="toolbar">
@@ -99,67 +125,85 @@ export class ChatProvider implements vscode.WebviewViewProvider {
                 <div id="input-container">
                     <input id="input" type="text" placeholder="Ask for quick assistance..." />
                 </div>
-                <script>
+                <script nonce="${nonce}">
                     const vscode = acquireVsCodeApi();
+                    let historyElement = document.getElementById('history');
 
-                    // Toolbar button handlers
-                    document.getElementById('settings-btn').addEventListener('click', () => {
-                        vscode.postMessage({ type: 'openSettings' });
-                    });
+                    function initializeHandlers() {
+                        document.getElementById('settings-btn').addEventListener('click', () => {
+                            vscode.postMessage({ type: 'openSettings' });
+                        });
 
-                    document.getElementById('drafts-btn').addEventListener('click', () => {
-                        vscode.postMessage({ type: 'openDrafts' });
-                    });
+                        document.getElementById('drafts-btn').addEventListener('click', () => {
+                            vscode.postMessage({ type: 'openDrafts' });
+                        });
 
-                    document.getElementById('clear-btn').addEventListener('click', () => {
-                        vscode.postMessage({ type: 'clearHistory' });
-                    });
+                        document.getElementById('clear-btn').addEventListener('click', () => {
+                            vscode.postMessage({ type: 'clearHistory' });
+                        });
 
-                    // Input handler
-                    document.getElementById('input').addEventListener('keypress', (e) => {
-                        if (e.key === 'Enter' && e.target.value.trim()) {
-                            const text = e.target.value;
-                            appendMessage(text, true);
-                            vscode.postMessage({ type: 'quickAssist', text });
-                            e.target.value = '';
-                        }
-                    });
+                        document.getElementById('input').addEventListener('keypress', (e) => {
+                            if (e.key === 'Enter' && e.target.value.trim()) {
+                                const text = e.target.value;
+                                appendMessage(text, true);
+                                vscode.postMessage({ type: 'quickAssist', text });
+                                e.target.value = '';
+                            }
+                        });
+                    }
 
-                    // Message display
                     function appendMessage(text, isUser) {
-                        const history = document.getElementById('history');
                         const message = document.createElement('div');
                         message.className = \`message \${isUser ? 'user-message' : 'assistant-message'}\`;
                         message.textContent = text;
-                        history.appendChild(message);
-                        history.scrollTop = history.scrollHeight;
+                        historyElement.appendChild(message);
+                        historyElement.scrollTop = historyElement.scrollHeight;
                     }
 
-                    // Handle incoming messages
-                    window.addEventListener('message', event => {
+                    window.addEventListener('message', (event) => {
                         const message = event.data;
                         if (message.type === 'response') {
                             appendMessage(message.text, false);
                         }
+                        if (message.type === 'clearHistory') {
+                            historyElement.innerHTML = '';
+                        }
                     });
+
+                    // Initial setup
+                    initializeHandlers();
                 </script>
             </body>
             </html>
         `;
     }
 
-    private clearChatHistory() {
+    private refreshWebview(nonce: string) {
         if (this._view) {
-            this._view.webview.postMessage({
-                type: 'clearHistory'
-            });
+            this._view.webview.html = this.getHtml(this._view.webview, nonce);
         }
     }
 
+    private postMessage(message: any) {
+        if (this._view) {
+            this._view.webview.postMessage(message);
+        }
+    }
+
+    private clearChatHistory() {
+        this.postMessage({ type: 'clearHistory' });
+    }
+
     public updateActiveModel(model: string) {
-        this._view?.webview.postMessage({
-            type: 'modelUpdate',
-            model
-        });
+        this.postMessage({ type: 'modelUpdate', model });
+    }
+
+    private dispose() {
+        while (this._disposables.length) {
+            const disposable = this._disposables.pop();
+            if (disposable) {
+                disposable.dispose();
+            }
+        }
     }
 }
