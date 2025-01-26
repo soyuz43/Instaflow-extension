@@ -14,18 +14,19 @@
   ],
   "main": "./dist/extension.js",
   "activationEvents": [
-    "onView:instaflowChat", 
-    "onCommand:instaflow.selectModel"
+    "onView:instaflowChat",
+    "onCommand:instaflow.selectModel",
+    "onCommand:instaflow.quickAssist"
   ],
   "contributes": {
     "commands": [
       {
-        "command": "instaflow.selectModel", 
+        "command": "instaflow.selectModel",
         "title": "Select AI Model",
         "category": "InstaFlow"
       },
       {
-        "command": "instaflow.quickAssist", 
+        "command": "instaflow.quickAssist",
         "title": "Quick Code Assist",
         "category": "InstaFlow"
       }
@@ -33,30 +34,35 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "instaflowPanel", 
+          "id": "instaflowPanel",
           "title": "InstaFlow",
           "icon": "resources/instaflow-icon.svg"
         }
       ]
     },
     "views": {
-      "instaflowPanel": [  
+      "instaflowPanel": [
         {
-          "id": "instaflowChat",  
+          "id": "instaflowChat",
           "name": "AI Chat",
           "contextualTitle": "InstaFlow Chat"
         }
       ]
     },
     "configuration": {
-      "title": "InstaFlow",  
+      "title": "InstaFlow",
       "properties": {
-        "instaflow.serverHost": {  
+        "instaflow.serverHost": {
           "type": "string",
           "default": "localhost",
           "description": "Hostname for the InstaFlow LLM server"
         },
-        "instaflow.enableTelemetry": {  
+        "instaflow.serverPort": {
+          "type": "number",
+          "default": 8080,
+          "description": "Port number for the InstaFlow LLM server"
+        },
+        "instaflow.enableTelemetry": {
           "type": "boolean",
           "default": true,
           "description": "Enable anonymous usage telemetry"
@@ -79,9 +85,9 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/axios": "^0.9.36",
-    "@types/mocha": "^10.0.10",
-    "@types/node": "20.x",
+    "@types/axios": "^1.7.0",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "^20.x",
     "@types/vscode": "^1.96.0",
     "@typescript-eslint/eslint-plugin": "^8.17.0",
     "@typescript-eslint/parser": "^8.17.0",
@@ -90,10 +96,10 @@
     "esbuild": "^0.24.0",
     "eslint": "^9.16.0",
     "npm-run-all": "^4.1.5",
-    "typescript": "^5.7.2"
+    "typescript": "^5.1.6"
   },
   "dependencies": {
-    "axios": "^1.7.9"
+    "axios": "^1.7.0"
   },
   "icon": "resources/instaflow-icon.png",
   "repository": {
@@ -108,6 +114,8 @@
     "LLM",
     "productivity",
     "code completion",
-    "developer tools"
+    "developer tools",
+    "chat",
+    "automation"
   ]
 }
