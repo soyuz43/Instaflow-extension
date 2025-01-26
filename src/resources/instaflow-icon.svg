@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="mainGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="url(#mainGradient)" opacity="0.9"/>
+  
+  <!-- Main icon shape -->
+  <g transform="translate(32 32) scale(0.5)">
+    <!-- Central flow arrow -->
+    <path d="M64 20 L84 64 L64 108 L44 64 Z" 
+          fill="none" 
+          stroke="#fde047" 
+          stroke-width="8"
+          stroke-linejoin="round"
+          stroke-linecap="round"/>
+          
+    <!-- Subtle motion lines -->
+    <g stroke="#f5f3ff" stroke-width="4" opacity="0.8">
+      <path d="M64 30 L64 98" stroke-dasharray="4 4"/>
+      <path d="M50 64 L78 64" stroke-dasharray="4 4"/>
+    </g>
+  </g>
+</svg>

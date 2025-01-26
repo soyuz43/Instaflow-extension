@@ -1,38 +1,67 @@
 {
   "name": "instaflow",
   "displayName": "InstaFlow",
-  "description": "VS Code extension for the instaflow suite",
-  "version": "0.0.1",
+  "description": "AI-powered development assistant with seamless LLM integration",
+  "version": "0.1.0",
+  "publisher": "your-company",
   "engines": {
     "vscode": "^1.96.0"
   },
   "categories": [
+    "Programming Languages",
+    "Snippets",
     "Other"
   ],
   "main": "./dist/extension.js",
+  "activationEvents": [
+    "onView:instaflowChat", 
+    "onCommand:instaflow.selectModel"
+  ],
   "contributes": {
     "commands": [
       {
-        "command": "instaflow.helloWorld",
-        "title": "Hello World"
+        "command": "instaflow.selectModel", 
+        "title": "Select AI Model",
+        "category": "InstaFlow"
+      },
+      {
+        "command": "instaflow.quickAssist", 
+        "title": "Quick Code Assist",
+        "category": "InstaFlow"
       }
     ],
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "instaflowPanel",
+          "id": "instaflowPanel", 
           "title": "InstaFlow",
-          "icon": "./resources/instaflow-icon.svg"
+          "icon": "resources/instaflow-icon.svg"
         }
       ]
     },
     "views": {
-      "instaflowPanel": [
+      "instaflowPanel": [  
         {
-          "id": "instaflowView",
-          "name": "InstaFlow View"
+          "id": "instaflowChat",  
+          "name": "AI Chat",
+          "contextualTitle": "InstaFlow Chat"
         }
       ]
+    },
+    "configuration": {
+      "title": "InstaFlow",  
+      "properties": {
+        "instaflow.serverHost": {  
+          "type": "string",
+          "default": "localhost",
+          "description": "Hostname for the InstaFlow LLM server"
+        },
+        "instaflow.enableTelemetry": {  
+          "type": "boolean",
+          "default": true,
+          "description": "Enable anonymous usage telemetry"
+        }
+      }
     }
   },
   "scripts": {
@@ -65,5 +94,20 @@
   },
   "dependencies": {
     "axios": "^1.7.9"
-  }
+  },
+  "icon": "resources/instaflow-icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/instaflow-extension"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/instaflow-extension/issues"
+  },
+  "keywords": [
+    "AI",
+    "LLM",
+    "productivity",
+    "code completion",
+    "developer tools"
+  ]
 }

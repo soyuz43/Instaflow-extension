@@ -1,50 +1,51 @@
-import * as vscode from "vscode";
-import * as path from "path";
-import * as fs from "fs";
+import * as vscode from 'vscode';
+import { ChatProvider } from './providers/ChatProvider';
+import { APIClient } from './util/apiClient';
 
 export function activate(context: vscode.ExtensionContext) {
-  console.log("InstaFlow extension is now active!");
-
-  // Register the InstaFlow view provider
-  context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider(
-      "instaflowView", // Ensure this matches the ID in package.json
-      new InstaFlowViewProvider(context)
-    )
-  );
+    console.log('InstaFlow extension activated');
+    
+    try {
+        const apiClient = new APIClient();
+        console.log('APIClient initialized successfully');
+        
+        const provider = new ChatProvider(context.extensionUri, apiClient);
+        console.log('ChatProvider initialized successfully');
+        
+        context.subscriptions.push(
+            vscode.window.registerWebviewViewProvider('instaflowChat', provider)
+        );
+        console.log('ChatProvider registered successfully');
+        
+        // Register commands with updated IDs
+        context.subscriptions.push(
+            vscode.commands.registerCommand('instaflow.selectModel', async () => {
+                try {
+                    const models = await apiClient.listModels();
+                    const selected = await vscode.window.showQuickPick(models);
+                    if (selected) {
+                        await apiClient.setActiveModel(selected);
+                        provider.updateActiveModel(selected);
+                        vscode.window.showInformationMessage(`Active model set to: ${selected}`);
+                    }
+                } catch (error) {
+                    vscode.window.showErrorMessage(`Failed to load models: ${error instanceof Error ? error.message : error}`);
+                    console.error('Error in selectModel command:', error);
+                }
+            })
+        );
+        
+        context.subscriptions.push(
+            vscode.commands.registerCommand('instaflow.quickAssist', async () => {
+                // Implement the quickAssist command functionality
+                // Add logging as needed
+            })
+        );
+        
+    } catch (error) {
+        console.error('Error during activation:', error);
+        vscode.window.showErrorMessage('Failed to activate InstaFlow extension.');
+    }
 }
 
-export function deactivate() {
-  console.log("InstaFlow extension is now deactivated.");
-}
-
-class InstaFlowViewProvider implements vscode.WebviewViewProvider {
-  private context: vscode.ExtensionContext;
-
-  constructor(context: vscode.ExtensionContext) {
-    this.context = context;
-  }
-
-  resolveWebviewView(webviewView: vscode.WebviewView) {
-    webviewView.webview.options = {
-      enableScripts: true,
-    };
-
-    // Load the HTML content from a file
-    const htmlPath = path.join(this.context.extensionPath, "src", "webview", "index.html");
-    const htmlContent = fs.readFileSync(htmlPath, "utf-8");
-
-    // Resolve CSS and JS paths
-    const scriptUri = webviewView.webview.asWebviewUri(
-      vscode.Uri.file(path.join(this.context.extensionPath, "src", "webview", "script.js"))
-    );
-    const styleUri = webviewView.webview.asWebviewUri(
-      vscode.Uri.file(path.join(this.context.extensionPath, "src", "webview", "styles.css"))
-    );
-
-    // Inject URIs into the HTML
-    webviewView.webview.html = htmlContent
-      .replace("styles.css", styleUri.toString())
-      .replace("script.js", scriptUri.toString());
-  }
-}
+export function deactivate() {}
