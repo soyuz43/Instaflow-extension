@@ -1,3 +1,4 @@
+// util/apiClient.ts
 import { window } from 'vscode';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -62,7 +63,7 @@ export class APIClient {
 
         return port;
     }
-    
+
     async quickAssist(prompt: string): Promise<string> {
         if (!this.baseUrl) {
             throw new Error('PR Buddy server is not available.');

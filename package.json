@@ -14,12 +14,17 @@
   ],
   "main": "./dist/extension.js",
   "activationEvents": [
-    "onView:instaflowChat",
+    "onView:instaflow.chat",
     "onCommand:instaflow.selectModel",
     "onCommand:instaflow.quickAssist"
   ],
   "contributes": {
     "commands": [
+      {
+        "command": "instaflow.showChat",
+        "title": "Show InstaFlow Chat",
+        "category": "InstaFlow"
+      },
       {
         "command": "instaflow.selectModel",
         "title": "Select AI Model",
@@ -43,9 +48,9 @@
     "views": {
       "instaflowPanel": [
         {
-          "id": "instaflowChat",
-          "name": "AI Chat",
-          "contextualTitle": "InstaFlow Chat"
+          "id": "instaflow.chat",
+          "name": "InstaFlow Chat",
+          "type": "webview"
         }
       ]
     },
@@ -56,11 +61,6 @@
           "type": "string",
           "default": "localhost",
           "description": "Hostname for the InstaFlow LLM server"
-        },
-        "instaflow.serverPort": {
-          "type": "number",
-          "default": 8080,
-          "description": "Port number for the InstaFlow LLM server"
         },
         "instaflow.enableTelemetry": {
           "type": "boolean",

@@ -1,63 +1,38 @@
 import * as vscode from 'vscode';
-import { ChatProvider } from './providers/ChatProvider';
-import { APIClient } from './util/apiClient';
+import { ChatWebviewProvider } from './providers/ChatWebViewProvider';
 
 export function activate(context: vscode.ExtensionContext) {
-    // Create an output channel for debug logs
     const outputChannel = vscode.window.createOutputChannel('InstaFlow Debug');
     context.subscriptions.push(outputChannel);
-    outputChannel.show(true);
     outputChannel.appendLine('=== InstaFlow Activation Started ===');
 
     try {
-        // Step 1: Initialize APIClient
-        outputChannel.appendLine('[1/5] Initializing APIClient...');
-        const apiClient = new APIClient();
-        outputChannel.appendLine('✓ APIClient initialized');
-
-        // Step 2: Create ChatProvider
-        outputChannel.appendLine('[2/5] Creating ChatProvider...');
-        const provider = new ChatProvider(context.extensionUri, apiClient);
-        outputChannel.appendLine('✓ ChatProvider created');
-
-        // Step 3: Register Webview Provider
-        outputChannel.appendLine('[3/5] Registering webview provider...');
+        outputChannel.appendLine('Registering ChatWebviewProvider...');
+        const chatWebviewProvider = new ChatWebviewProvider(context.extensionUri);
         context.subscriptions.push(
-            vscode.window.registerWebviewViewProvider('instaflowChat', provider)
+            vscode.window.registerWebviewViewProvider(
+                ChatWebviewProvider.viewType,
+                chatWebviewProvider
+            )
         );
-        outputChannel.appendLine('✓ Webview provider registered');
-
-        // Step 4: Register Debug Commands
-        outputChannel.appendLine('[4/5] Registering debug commands...');
-        context.subscriptions.push(
-            vscode.commands.registerCommand('instaflow.debugViews', () => {
-                outputChannel.appendLine('\n=== VIEW DEBUG INFORMATION ===');
-                const isChatVisible = provider.isViewVisible; // Ensure this property exists in ChatProvider
-                outputChannel.appendLine(
-                    isChatVisible
-                        ? '✓ instaflowChat view is visible'
-                        : '× instaflowChat view is NOT visible'
-                );
-            })
-        );
-
-        // Step 5: Finalize Activation
-        outputChannel.appendLine('[5/5] Finalizing activation...');
-        setTimeout(() => {
-            vscode.commands.executeCommand('workbench.view.extension.instaflowPanel');
-        }, 1000);
-        outputChannel.appendLine('=== Activation Completed Successfully ===\n');
+        outputChannel.appendLine('✅ ChatWebviewProvider registered successfully.');
     } catch (error) {
-        // Handle critical errors during activation
-        const errorMessage =
-            error instanceof Error
-                ? `${error.message}\n${error.stack}`
-                : String(error);
-        outputChannel.appendLine(`××× CRITICAL ERROR ×××\n${errorMessage}`);
-        vscode.window.showErrorMessage(`InstaFlow failed to activate: ${errorMessage}`);
+        if (error instanceof Error) {
+            outputChannel.appendLine(`❌ Error registering ChatWebviewProvider: ${error.message}`);
+        } else {
+            outputChannel.appendLine(`❌ Unknown error: ${JSON.stringify(error)}`);
+        }
     }
+
+    // Register command to manually show the InstaFlow Chat Webview
+    context.subscriptions.push(
+        vscode.commands.registerCommand('instaflow.showChat', async () => {
+            outputChannel.appendLine('🟢 Executing command: instaflow.showChat');
+            await vscode.commands.executeCommand('workbench.view.extension.instaflowPanel');
+        })
+    );
+
+    vscode.window.showInformationMessage('InstaFlow activated successfully!');
 }
 
-export function deactivate() {
-    // Add cleanup logic if needed
-}
+export function deactivate() {}
