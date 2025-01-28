@@ -32,7 +32,7 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
 
-    vscode.window.showInformationMessage('InstaFlow activated successfully!');
+    
 }
 
 export function deactivate() {}

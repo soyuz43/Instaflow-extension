@@ -1,109 +1,21 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <style>
-        :root { --vscode-font-family: sans-serif; }
-        body { 
-            margin: 0; 
-            padding: 0;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        #toolbar {
-            padding: 0.5rem;
-            background: var(--vscode-editor-background);
-            border-bottom: 1px solid var(--vscode-editorWidget-border);
-            display: flex;
-            gap: 1rem;
-        }
-        
-        #history {
-            flex: 1;
-            overflow-y: auto;
-            padding: 1rem;
-        }
-        
-        .message { 
-            margin: 0.5rem 0;
-            padding: 0.8rem;
-            border-radius: 4px;
-            max-width: 80%;
-        }
-        
-        .user-message {
-            background: var(--vscode-button-background);
-            color: var(--vscode-button-foreground);
-            margin-left: auto;
-        }
-        
-        .assistant-message {
-            background: var(--vscode-input-background);
-            border: 1px solid var(--vscode-input-border);
-        }
-        
-        #input-container {
-            padding: 1rem;
-            background: var(--vscode-editor-background);
-            border-top: 1px solid var(--vscode-editorWidget-border);
-        }
-        
-        #input {
-            width: 100%;
-            padding: 0.8rem;
-            border: 1px solid var(--vscode-input-border);
-            background: var(--vscode-input-background);
-            color: var(--vscode-input-foreground);
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'none'; 
+                   script-src 'nonce-{{nonce}}' {{cspSource}}; 
+                   style-src {{cspSource}};">
+    <link rel="stylesheet" type="text/css" href="{{styleUri}}">
+    <title>InstaFlow Chat</title>
 </head>
 <body>
-    <div id="toolbar">
-        <button id="settings-btn" title="Model Settings">⚙️</button>
-        <button id="drafts-btn" title="Saved Conversations">📁</button>
-    </div>
-    
-    <div id="history"></div>
-    
+    <div id="chat-container"></div>
     <div id="input-container">
-        <input id="input" type="text" placeholder="Ask for quick assistance..." />
+        <input id="user-input" type="text" placeholder="Type a message..." />
+        <button id="send-btn">Send</button>
     </div>
-
-    <script>
-        const vscode = acquireVsCodeApi();
-        
-        // Message handling
-        function appendMessage(text, isUser) {
-            const history = document.getElementById('history');
-            const message = document.createElement('div');
-            message.className = `message ${isUser ? 'user-message' : 'assistant-message'}`;
-            message.textContent = text;
-            history.appendChild(message);
-            history.scrollTop = history.scrollHeight;
-        }
-
-        document.getElementById('input').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && e.target.value.trim()) {
-                const text = e.target.value;
-                appendMessage(text, true);
-                vscode.postMessage({ type: 'quickAssist', text });
-                e.target.value = '';
-            }
-        });
-
-        // Handle incoming messages from extension
-        window.addEventListener('message', event => {
-            const message = event.data;
-            switch (message.type) {
-                case 'response':
-                    appendMessage(message.text, false);
-                    break;
-                case 'modelUpdate':
-                    // Update UI with new model
-                    break;
-            }
-        });
-    </script>
+    <script nonce="{{nonce}}" src="{{scriptUri}}"></script>
 </body>
 </html>
